@@ -256,3 +256,102 @@
 
 
 
+2.   mybatis的执行流程
+
+>   <img src="img/mybatis的执行流程.png" alt="mybatis的执行流程" style="zoom: 33%;" />
+>
+>   1.   读取mybatis的配置文件，加载运行环境和映射文件
+>   2.   创建会话工厂SqlSessionFactory，全局只有一个，用于生产SqlSession
+>   3.   通过会话工厂创建SqlSession对象，里面包含了执行SQL语句的所有方法
+>   4.   从SqlSession中获取Executor执行器，里面封装了JDBC的操作，是真正操作数据库的接口，同时维护缓存
+>   5.   Executor读取MappedStatement对象，然后对输入参数进行映射，再执行sql语句，最后将输出结果映射并返回
+>        *   一个MappedStatement对象代表一个标签，里面封装了映射信息
+
+
+
+3.   mybatis如何获取生成的主键
+
+>   如果数据表使用的是自增主键的话，我们可以在`insert`标签中配置`useGeneratedKeys`和`keyProperty`两个属性来获取数据库生成的主键。
+>
+>   *   `useGeneratedKeys`：默认值为`false`，当我们设置为`true`是时就会使用JDBC的getGenereatedKeys方法获取主键并赋值到`keyProperty`设置的领域模型属性中
+>   *   `keyProperty`：默认值`unset`，用于设置getGeneratedKeys方法的返回值将赋值到领域模型的哪个属性中
+>
+>   此外，如果我们是通过注解写sql语句的话，那么可以在方法上加上`@Options`注解，它里面也有`useGeneratedKeys`、`keyProperty`这两个属性。
+
+
+
+4.   当实体类中的属性名和表中的字段名不一样怎么办
+
+>   1.   可以开启mybatis驼峰命名自动匹配映射，可以解决一部分的字段名不匹配问题
+>   2.   设置字段的别名，使其与实体类属性名保持一致
+>   3.   通过ResultMap来映射字段名和实体类属性名一一对应
+
+
+
+5.   mybatis如何实现多表查询
+
+**ResultMap编写方式**
+
+```xml
+<resultMap id="唯一标识" type="映射的entity对象的绝对路径">
+    <id column="表主键字段" jdbcType="字段类型" property="映射entity对象的主键属性" />
+ 
+    <result column="表某个字段" jdbcType="字段类型" property="映射entity对象的某个属性"/>
+ 
+    <!-- 指的是entity对象中的对象属性 -->
+    <association property="entity中某个对象属性" javaType="这个对象的绝对路径">
+        <id column="这个对象属性对应的表的主键字段" jdbcType="字段类型" property="这个对象属性内的主键属性"/>
+        <result column="表某个字段" jdbcType="字段类型" property="这个对象属性内的某个属性"/>
+    </association>
+ 
+    <!-- 指的是entity对象中的集合属性 -->
+    <collection property="entity中的某个集合属性" ofType="这个集合泛型所存实体类的绝对路径">
+        <id column="这个集合属性中泛型所存实体类对象对应表的主键字段" jdbcType="字段类型"
+            property="这个集合属性中泛型所存实体类对象的主键属性"
+        />
+        <result column="表某个字段" jdbcType="字段类型" 
+                property="这个集合属性泛型所存实体类对象的属性"
+        />  
+    </collection>
+ 
+    <!-- 引用另一个resultMap (套娃) -->
+    <collection property="entity中的某个集合属性" 
+                resultMap="这个引用的resultMap的type,就是这个集合属性泛型所存实体类的绝对路径"
+    />
+</resultMap>
+```
+
+>   1.   直接编写多表关联查询的sql语句，使用ResultMap建立结果集映射，其中`association`<sub>/əˌsoʊsiˈeɪʃn/</sub>标签用于配置实体类中普通属性的映射关系，`collection`标签用于配置实体类中集合属性或另一实体类的映射关系
+>   2.   直接拆分为多个单表查询
+
+
+
+6.   mybatis有哪些动态sql
+
+>   mybatis提供了9种动态sql标签，可以动态的根据属性值来拼接数据库执行的sql语句：
+>
+>   *   \<if\>：根据`test`属性中的条件判断是否展示sql
+>   *   \<where\>：动态拼接where字段，可以去除sql前多余的and
+>   *   \<set\>：动态拼接set字段，可以去除sql后多余的“,”
+>   *   \<foreach\>：把传入的集合对象进行遍历
+>   *   \<include\>：用于抽取sql，减少重复sql的书写
+>   *   \<trim\>：是一个格式化标签，用于处理字符串
+>   *   \<choose\>\<when\>\<otherwise\>：这是一组组合标签，类似Java中的switch、case、default
+
+
+
+7.   mybatis动态sql执行原理
+
+>   使用OGNL从sql参数对象中计算表达式的值，根据表达式的值动态拼接sql，以此来完成动态sql的功能
+
+
+
+8.   mybatis是否支持延迟加载
+
+>   mybatis仅支持`association`和`collection`的延迟加载，可以通过设置lazyLoadingEnabled的值为true来开启全局的延迟加载，然后也可以在ResultMap映射时，它里面的`association`和`collection`标签中有一个`fetch`属性，可以设置它来开启局部的延迟加载。
+
+
+
+9.   mybatis延迟加载的原理
+
+>   使用CGLIB创建目标对象的代理对象，调用目标方法时会进入拦截器方法，如果发现目标对象的某个属性值为空，那么就会单独发送事先保存好的sql语句去查询，并将查询出来的结果进行赋值
