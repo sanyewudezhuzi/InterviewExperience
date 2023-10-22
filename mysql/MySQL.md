@@ -125,7 +125,7 @@
 
 6.   MVCC
 
->   MVCC全程Multi-Version Concurrency Control，即多版本并发控制，用于维护一个数据的多个版本，使得读写操作没有冲突。MVCC的实现依赖于数据库记录中的隐藏字段、undo log、readView。
+>   MVCC全称Multi-Version Concurrency Control，即多版本并发控制，用于维护一个数据的多个版本，使得读写操作没有冲突。MVCC的实现依赖于数据库记录中的隐藏字段、undo log、readView。
 >
 >   *   隐藏字段：在一个数据表中除了我们自己设置的字段外，还有三个隐藏字段分别是DB_TRX_ID、DB_ROLL_PTR、DB_ROW_ID
 >
