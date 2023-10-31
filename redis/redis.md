@@ -75,16 +75,16 @@
 
 >   ![image-20231030224458856](img/image-20231030224458856.png)
 >
->   我们可以在某个节点中执行`slaveof 主IP 主port`来使当前节点作为目标节点的slave节点，主从在第一次建立连接时会进行全量复制。
+>   我们可以在某个节点中执行`slaveof 目标IP 目标port`来使当前节点作为目标节点的slave节点，主从在第一次建立连接时会进行全量复制。
 >
 >   1.   slave向master发起数据同步请求，如果有replid和offset的话也会发送给master
 >        *   Replication Id：简称replid，是数据集的标记，id一致则说明是同一数据集，每一个master 都有唯一的replid，slave会继承master节点的replid
 >        *   offset：偏移量，随着记录在repl_baklog中的数据增多而逐渐增大
 >   2.   master判断replid是否与自己的一致或偏移量是否被覆盖，如果不一致或偏移量被覆盖则执行全量复制，否则会执行增量复制
->   3.   如果执行增量复制，则返回replid和offset给slave，slave接收到后保存版本信息
+>   3.   如果执行全量复制，则返回replid和offset给slave，slave接收到后保存版本信息
 >   4.   master执行`bgsave`，生成RDB文件并发送给slave，slave接收到后会清空本地数据并加载RDB文件
 >   5.   master在记录RDB文件的期间可能会继续产生写操作，这时会使用repl_baklog文件来记录这些写操作命令并持续发送给slave
->        *   repl_baklog：记录Redis处理过的命令日志及offset，包括master当前的offset和slave依旧拷贝到的offset，是一个固定大小的环形数组。
+>        *   repl_baklog：记录Redis处理过的命令日志及offset，包括master当前的offset和slave已经拷贝到的offset，是一个固定大小的环形数组。
 >   6.   slave执行接收到的命令，并会一直保持与master之间的同步
 >   7.   至此全量同步完成
 
@@ -96,7 +96,7 @@
 >
 >   1.   slave向master发起数据同步请求，并将自己的replid和offset发送给master
 >   2.   master判断replid是否和自己的相同，并判断offset是否未被覆盖，如果都是则进行增量同步并回复continue，否则进行全量同步
->   3.   master从repl_baklog中获取offset后的数据并发送给slave
+>   3.   如果执行增量同步，master从repl_baklog中获取offset后的数据并发送给slave
 >   4.   slave执行接收到的命令
 >   5.   至此增量同步完成
 
