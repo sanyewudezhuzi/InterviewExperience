@@ -2,23 +2,90 @@
 
 
 
-# 1.Spring
+# 一、SpringMVC
 
-1.   什么是IOC，什么是DI
+## 1. SpringMVC的拦截器和servlet的过滤器的区别
+
+>   *   过滤器filter是Javaweb的三大组件之一，依赖于servlet容器，在实现上基于函数回调，可以对绝大部分请求进行过滤
+>   *   拦截器是Spring提供的，在实现上基于Java的反射机制，是面向切面编程的一种应用
+>   *   如果两个都存在，过滤器是在拦截器的外层的，也就是说过滤器会先执行
+>   *   过滤器只在servlet前后起作用，而拦截器能够深入到方法前后、异常抛出前后等位置，因此拦截器的使用具有更大的弹性，所有在Spring架构的程序中推荐优先使用拦截器
+
+
+
+## 2. SpringMVC的执行流程
+
+>   **视图阶段**
+>
+>   ![SpringMVC的执行流程——视图阶段](./img/SpringMVC的执行流程——视图阶段.png)
+>
+>   1.   首先请求发出后，在后台就会有一个由tomcat初始化的前端控制器DispatcherServlet来接收这个请求
+>        *   前端控制器DispatcherServlet相当于一个调度中心，它内部有很多的组件类，例如：
+>            *   处理器映射器HandlerMapping
+>            *   处理器适配器HandlerAdaptor
+>            *   视图解析器ViewResolver
+>   2.   请求到达前端控制器后，它发送给处理器映射器查询handler
+>        *   我们的controller层中有很多的方法，方法上会有`@RequestMapping`注解来标识请求路径，在处理器映射器中就有一个map来保存请求路径与这些方法的关系
+>   3.   在处理器映射器查询完后，会返回一个处理器执行链HandlerExecutionChain给前端控制器
+>        *   因为我们执行这个方法可能还会有拦截器等方法需要执行，因此返回的处理器执行链中包含有整个的执行流程
+>   4.   前端控制器会根据处理器执行链，向处理器适配器请求执行方法
+>   5.   处理器适配器就会调用方法进行执行
+>   6.   方法执行完后会返回响应给处理器适配器
+>        *   方法中的参数是从前端接收到的，而且请求也可以是多种多样，这时候处理器适配器的作用就体现出来了，它能够将请求的参数进行处理并赋值给方法的形参，并且将方法的返回值进行处理
+>   7.   处理器适配器执行完后会返回ModelAndView给前端控制器
+>   8.   前端控制器会找视图解析器将逻辑视图解析为真正的视图
+>   9.   视图解析器会返回View对象
+>   10.   前端控制器得到视图对象后就会渲染视图并返回响应
+>
+>   
+>
+>   **前后端分离阶段**
+>
+>   ![SpringMVC的执行流程——前后端分离阶段](img/SpringMVC的执行流程——前后端分离阶段.png)
+>
+>   1.   前5步与视图阶段一模一样
+>
+>   2.   我们如果加上了`@ResponseBody`注解，那么前端控制器就会通过HttpMessageConverter来将返回结果转换为JSON并响应给前端
+
+
+
+## 3. SpringMVC如何处理异常
+
+>   我们可以配置全局异常处理器来对控制层的异常进行统一处理，需要使用到两个注解：
+>
+>   *   `@ControllerAdvice`：在类上打上这个注解，标明这个类是控制增强器，用于给Controller层添加统一的操作
+>   *   `@ExceptionHandler`：我们可以在方法上打上这个注解，用于标识捕获的异常种类，这个时候我们就可以自定义对异常的处理
+
+
+
+
+
+
+
+# 二、Spring
+
+## 1. 什么是IOC，什么是DI
 
 >   *   IOC官方称之为控制反转，用人话说就是我们把创建对象的权力交由Spring管理，Spring通过工厂模式创建出对象并存入Spring的容器中，官方称这个对象为bean，当我们要使用这个对象时就可以直接从Spring容器中获取。优势是创建对象的解耦。
 >   *   DI官方称之为依赖注入，说白了就是从Spring容器中获取bean对象并将其赋值给我们自己定义的变量，这个注入是自动注入，需要调用JavaBean对象的set方法或者有参构造器来赋值。优势就是使用对象时解耦。
 
 
 
-2.   依赖注入的方式
+## 2. 依赖注入的方式
 
 >   1.   使用JavaBean对象的set方法注入
 >   2.   使用有参构造器注入，比较推荐的方法是在需要注入的类上打上`@RequiredArgsConstructor`注解，并在需要注入的实例前加上`final`修饰
 
 
 
-3.   Spring支持几种bean的作用域
+## 3. @Autowired和@Resource的区别
+
+>   *   `@Autowired`：由Spring提供的注解，默认通过类型注入，如果存在多个相同的类，则需要通过`@Qualifier`注解来指定类的名称
+>   *   `@Resource`：由Java提供的注解，默认优先通过名称注入，然后再通过类型注入，如果存在多个相同的类型，则必须指定名称
+
+
+
+## 4. Spring支持几种bean的作用域
 
 >   Spring框架支持五种bean的作用域：
 >
@@ -30,7 +97,7 @@
 
 
 
-4.   Spring框架中的单例bean是线程安全的吗？
+## 5. Spring框架中的单例bean是线程安全的吗？
 
 >   Spring框架中的单例bean是线程不安全的，因为它会被所有的线程共享，如果bean中有实例变量，那么这些实例变量就可能成为多线程访问的共享资源，从而导致线程安全问题。 
 >
@@ -38,7 +105,7 @@
 
 
 
-5.   Spring自动装配bean有哪些方式？（xml开发方式）
+## 6. Spring自动装配bean有哪些方式？（xml开发方式）
 
 >   常用的有四种：
 >
@@ -51,7 +118,7 @@
 
 
 
-6.   Spring有哪些重要的注解
+## 7. Spring有哪些重要的注解
 
 >   *   关于bean的注解
 >       *   最基本的`@Component`，在spring执行时将该类创建并放入spring容器中
@@ -90,14 +157,14 @@
 
 
 
-7.   Spring中的事务是如何实现的
+## 8. Spring中的事务是如何实现的
 
 >   *   第一种方法是编程式事务控制，需要使用TransactionTemplate来实现，这种方法对业务代码有侵入性，会造成高耦合，不过它可以更小粒度地控制事务的范围
 >   *   第二种方法是使用声明式事务管理，通过`@Transactional`注解来开启事务。它的本质是通过aop，从ThreadLocal中获取与数据库的连接，在方法执行前将事务自动提交功能关闭，在方法结束后根据执行的成败从而进行提交或回滚
 
 
 
-8.   Spring中事务失效的场景
+## 9. Spring中事务失效的场景
 
 >   1.   因为Spring事务是基于动态代理来实现的，所有只有被代理对象调用时，那么这个注解才会生效
 >   2.   如果这个方法是私有化或是被final修饰的，那么@Transactional也会失效，因为底层cglib是基于父子类来实现的，子类是不能重写父类的私有化方法的，而且final修饰的方法不能再被重写
@@ -106,7 +173,7 @@
 
 
 
-9.   Spring的事务传播行为
+## 10. Spring的事务传播行为
 
 >   *   REQUIRED：需要有。当前如果有事务则加入事务，如果没有事务则创建新事务，是spring事务传播的默认值，大部分情况下都是用该事务传播行为
 >   *   REQUIRES_NEW：需要有新的。无论当前有没有事务都会创建新的事务，当我们不希望事务之间相互影响的时候就可以使用该传播行为。例如记录日志，无论操作是否成功都需要记录日志
@@ -118,9 +185,9 @@
 
 
 
-10.   谈谈你对spring的理解（IOC、AOP）
+## 11. 谈谈你对spring的理解（IOC、AOP）
 
->Java之所以比Go受欢迎，其中一个最大的原因就是Java具有良好的生态环境，而这个生态环境就是Spring这个大家族。在这个Spring家族中，我们最常用的就是spring框架，在spring框架中有两个非常重要的组件，一个是IOC，一个是AOP。
+>在这个Spring家族中，我们最常用的就是spring框架，在spring框架中有两个非常重要的组件，一个是IOC，一个是AOP。
 >
 >IOC组件中又有控制反转模块和依赖注入模块，控制反转就是把我们创建对象的权力交由spring管理，spring使用工厂模式创建出bean对象存入spring IOC容器中，它的优势是能够在创建对象层面进行解耦，我们不需要关注它是怎么创建出这个对象的，只需要从IOC容器中获取对象使用即可。而依赖注入就是从IOC容器中获取bean对象并将其赋值给我们自己定义的变量，这个注入是自动注入，需要调用Java Bean对象的set方法或者有参构造器来进行赋值，它的优势是能够在使用对象层面进行解耦。
 >
@@ -128,7 +195,7 @@
 
 
 
-11.   JDK动态代理和CGLIB动态代理的区别
+## 12. JDK动态代理和CGLIB动态代理的区别
 
 >   JDK动态代理和CGLIT是两种常见的动态代理技术
 >
@@ -139,7 +206,7 @@
 
 
 
-12.   spring的bean的生命周期
+## 13. spring的bean的生命周期
 
 ![spring的bean的生命周期](img/spring的bean的生命周期.png)
 
@@ -157,7 +224,7 @@
 
 
 
-13.   spring中的循环引用
+## 14. spring中的循环引用
 
 [视频讲解](./img/Spring-bean的循环依赖（循环引用）.mp4)
 
@@ -191,72 +258,16 @@
 
 
 
-# 2. SpringMVC
+# 三、Mybatis
 
-1.   SpringMVC的拦截器和servlet的过滤器的区别
-
->   *   过滤器filter是Javaweb的三大组件之一，依赖于servlet容器，在实现上基于函数回调，可以对绝大部分请求进行过滤
->   *   拦截器是Spring提供的，在实现上基于Java的反射机制，是面向切面编程的一种应用
->   *   如果两个都存在，过滤器是在拦截器的外层的，也就是说过滤器会先执行
->   *   过滤器只在servlet前后起作用，而拦截器能够深入到方法前后、异常抛出前后等位置，因此拦截器的使用具有更大的弹性，所有在Spring架构的程序中推荐优先使用拦截器
-
-
-
-2.   SpringMVC的执行流程
-
->   **视图阶段**
->
->   ![SpringMVC的执行流程——视图阶段](./img/SpringMVC的执行流程——视图阶段.png)
->
->   1.   首先请求发出后，在后台就会有一个由tomcat初始化的前端控制器DispatcherServlet来接收这个请求
->        *   前端控制器DispatcherServlet相当于一个调度中心，它内部有很多的组件类，例如：
->            *   处理器映射器HandlerMapping
->            *   处理器适配器HandlerAdaptor
->            *   视图解析器ViewResolver
->   2.   请求到达前端控制器后，它发送给处理器映射器查询handler
->        *   我们的controller层中有很多的方法，方法上会有`@RequestMapping`注解来标识请求路径，在处理器映射器中就有一个map来保存请求路径与这些方法的关系
->   3.   在处理器映射器查询完后，会返回一个处理器执行链HandlerExecutionChain给前端控制器
->        *   因为我们执行这个方法可能还会有拦截器等方法需要执行，因此返回的处理器执行链中包含有整个的执行流程
->   4.   前端控制器会根据处理器执行链，向处理器适配器请求执行方法
->   5.   处理器适配器就会调用方法进行执行
->   6.   方法执行完后会返回响应给处理器适配器
->        *   方法中的参数是从前端接收到的，而且请求也可以是多种多样，这时候处理器适配器的作用就体现出来了，它能够将请求的参数进行处理并赋值给方法的形参，并且将方法的返回值进行处理
->   7.   处理器适配器执行完后会返回ModelAndView给前端控制器
->   8.   前端控制器会找视图解析器将逻辑视图解析为真正的视图
->   9.   视图解析器会返回View对象
->   10.   前端控制器得到视图对象后就会渲染视图并返回响应
->
->   
->
->   **前后端分离阶段**
->
->   ![SpringMVC的执行流程——前后端分离阶段](img/SpringMVC的执行流程——前后端分离阶段.png)
->
->   1.   前5步与视图阶段一模一样
->
->   6.   我们如果加上了`@ResponseBody`注解，那么前端控制器就会通过HttpMessageConverter来将返回结果转换为JSON并响应给前端
-
-
-
-3.   SpringMVC如何处理异常
-
->   我们可以配置全局异常处理器来对控制层的异常进行统一处理，需要使用到两个注解：
->
->   *   `@ControllerAdvice`：在类上打上这个注解，标明这个类是控制增强器，用于给Controller层添加统一的操作
->   *   `@ExceptionHandler`：我们可以在方法上打上这个注解，用于标识捕获的异常种类，这个时候我们就可以自定义对异常的处理
-
-
-
-# 3. Mybatis
-
-1.   mybatis的#{}和${}的区别
+## 1. mybatis的#{}和${}的区别
 
 >   *   `#{}`是预编译处理，将sql语句进行预编译时会将这里面的内容替换为“?”，然后调用PreparedStatement的set方法来进行赋值，并且会加上引号，可以很大程度防止sql注入
 >   *   `${}`是字符串替换，你给的是什么值转换的就是什么值
 
 
 
-2.   mybatis的执行流程
+## 2. mybatis的执行流程
 
 >   <img src="img/mybatis的执行流程.png" alt="mybatis的执行流程" style="zoom: 33%;" />
 >
@@ -269,7 +280,7 @@
 
 
 
-3.   mybatis如何获取生成的主键
+## 3. mybatis如何获取生成的主键
 
 >   如果数据表使用的是自增主键的话，我们可以在`insert`标签中配置`useGeneratedKeys`和`keyProperty`两个属性来获取数据库生成的主键。
 >
@@ -280,7 +291,7 @@
 
 
 
-4.   当实体类中的属性名和表中的字段名不一样怎么办
+## 4. 当实体类中的属性名和表中的字段名不一样怎么办
 
 >   1.   可以开启mybatis驼峰命名自动匹配映射，可以解决一部分的字段名不匹配问题
 >   2.   设置字段的别名，使其与实体类属性名保持一致
@@ -288,7 +299,7 @@
 
 
 
-5.   mybatis如何实现多表查询
+## 5. mybatis如何实现多表查询
 
 **ResultMap编写方式**
 
@@ -326,7 +337,7 @@
 
 
 
-6.   mybatis有哪些动态sql
+## 6. mybatis有哪些动态sql
 
 >   mybatis提供了9种动态sql标签，可以动态的根据属性值来拼接数据库执行的sql语句：
 >
@@ -340,25 +351,19 @@
 
 
 
-7.   mybatis动态sql执行原理
-
->   使用OGNL从sql参数对象中计算表达式的值，根据表达式的值动态拼接sql，以此来完成动态sql的功能
-
-
-
-8.   mybatis是否支持延迟加载
+## 7. mybatis是否支持延迟加载
 
 >   mybatis仅支持`association`和`collection`的延迟加载，可以通过设置lazyLoadingEnabled的值为true来开启全局的延迟加载，然后也可以在ResultMap映射时，它里面的`association`和`collection`标签中有一个`fetch`属性，可以设置它来开启局部的延迟加载。
 
 
 
-9.   mybatis延迟加载的原理
+## 8. mybatis延迟加载的原理
 
 >   使用CGLIB创建目标对象的代理对象，调用目标方法时会进入拦截器方法，如果发现目标对象的某个属性值为空，那么就会单独发送事先保存好的sql语句去查询，并将查询出来的结果进行赋值
 
 
 
-10.   mybatis如何实现批量插入数据
+## 9. mybatis如何实现批量插入数据
 
 >   1.   mybatis的接口方法参数需要定义为集合类型
 >   2.   在映射文件中通过\<forEach\>标签遍历集合，这个标签中有这些属性：
@@ -371,7 +376,7 @@
 
 
 
-11.   mybatis的一级、二级缓存
+## 10. mybatis的一级、二级缓存
 
 >   mybatis支持一级缓存和二级缓存，这些缓存都是保存在本地缓存中，它的实现是基于PerpetualCache类，本质就是一个HashMap。一级缓存的作用域是session级别，这个session主要指的是sqlSession，范围相对来说比较小；二级缓存的范围相对就大一些，它的作用域是namespace命名空间和mapper的作用域，不依赖于session。两个缓存的区别主要体现在不同作用域下，保存缓存的时机是不同的。
 >
@@ -379,3 +384,65 @@
 >   *   二级缓存：默认关闭，当我们希望在命名空间和mapper中执行多次相同的sql却只在数据库中进行一次查询，我们就可以开启二级缓存。需要在全局配置文件中将cacheEnable的值设置为true，然后使用`<cache \>`标签让当前的mapper生效即可。需要注意的时，二级缓存中的数据需要实现Serializable序列化接口，并且只有当会话提交或关闭后，一级缓存中的数据才会存入二级缓存中
 >
 >   当我们执行增删改操作时，会将该作用域下所有的缓存都清除。
+
+
+
+
+
+
+
+# 四、SpringBoot
+
+## 1. SpringBoot自动装配原理
+
+>   我们在SpringBoot项目的启动类上会打上`@SpringBootApplication`注解，其实SpringBoot的自动装配主要依赖的也就是这个注解。`@SpringBootApplication`注解中整合了三个注解：
+>
+>   *   `@SpringBootConfiguration`：作用与`@Configuration`注解相同，用来声明当前类是一个配置类
+>   *   `@ComponentScan`：组件扫描注解，默认扫描当前类所在的包及其子包
+>   *   `@EnableAutoConfiguration`：SpringBoot实现自动化配置的核心注解
+>
+>   `@EnableAutoConfiguration`注解中又整合了很多注解，其中有一个`@Import`注解用于导入自动配置的选择器，它会读取该项目和该项目引用的Jar包的classpath路径下META-INF中的一个spring.factories文件，这个文件中存储了很多配置类的全限定类名，SpringBoot会根据一些条件去指定加载这些类：
+>
+>   *   配置类的类上有一个`@ConditionalOnClass`注解，这个注解会判断是否有对应的字节码文件，当我们导入了相关的依赖其实就有了，这时才能进入类运行其中的方法
+>   *   方法上有`@Bean`和`@ConditionalOnMissingBean`注解，这个注解会判断当前的Spring IOC容器中有没有对应的bean，如果存在则不会执行这个方法
+
+ 
+
+2.   SpringBoot启动流程
+
+>   1.   首先会进入启动类中的`SpringApplication.run(启动类.class, args)`方法，它会在执行run()方法前new一个SpringApplication对象。
+>   2.   然后进入run()方法，它会调用SpringBoot的各个初始化器进行初始化和准备工作。
+>   3.   在这之后，SpringBoot会创建应用程序的上下文，在这个阶段会执行SpringBoot自动装配的机制。
+>   4.   SpringBoot会执行各种启动任务，包括创建Web服务器、加载应用程序的配置、初始化各种组件等。这个阶段会执行SpringBoot的刷新机制，它会调用各种初始化器和监听器，执行各种启动任务。其中启动Tomcat 就是在这个环节进行。
+
+
+
+3.   SpringBoot常用的起步依赖有哪些
+
+>   *   `spring-boot-starter-web`
+>   *   `spring-boot-starter-test`
+>   *   `spring-boot-starter-jdbc`
+>   *   `mybatis-spring-boot-starter`
+>   *   `mybatis-plus-spring-boot-starter`
+>   *   `spring-boot-starter-data-redis`
+>   *   `spring-boot-starter-amqp`
+>   *   `spring-boot-starter-data-elasticsearch`
+>   *   `spring-boot-starter-data-mongodb`
+>   *   `spring-cloud-starter-alibaba-nacos-discovery`
+>   *   `spring-cloud-starter-openfeign`
+
+
+
+4.   SpringBoot支持的配置文件有哪些
+
+>   按执行顺序排序：
+>
+>   *   bootstrap.yml
+>   *   application.yaml
+>   *   application.yml
+>   *   application.properties
+>   *   设置全局的JVM参数：-D键=值
+>       *   举例：-Dserver.port=8080
+>   *   设置启动参数：--键=值
+>       *   举例：--server.port=8080
+
