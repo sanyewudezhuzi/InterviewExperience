@@ -408,7 +408,7 @@
 
  
 
-2.   SpringBoot启动流程
+## 2. SpringBoot启动流程
 
 >   1.   首先会进入启动类中的`SpringApplication.run(启动类.class, args)`方法，它会在执行run()方法前new一个SpringApplication对象。
 >   2.   然后进入run()方法，它会调用SpringBoot的各个初始化器进行初始化和准备工作。
@@ -417,7 +417,7 @@
 
 
 
-3.   SpringBoot常用的起步依赖有哪些
+## 3. SpringBoot常用的起步依赖有哪些
 
 >   *   `spring-boot-starter-web`
 >   *   `spring-boot-starter-test`
@@ -433,7 +433,7 @@
 
 
 
-4.   SpringBoot支持的配置文件有哪些
+## 4. SpringBoot支持的配置文件有哪些
 
 >   按执行顺序排序：
 >
