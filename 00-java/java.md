@@ -11,7 +11,7 @@
 >       *   ThreadLocal是Thread的局部变量
 >       *   ThreadLocal为每个线程提供单独一份存储空间
 >       *   ThreadLocal存储的数据可以在一个线程内传递，不同线程是相互隔离的
->       *   底层是一个Map存储，每个ThreadLocal使用Entry存储数据，ThreadLocal对线本身作为key，数据作为value
+>       *   底层是一个Map存储，每个ThreadLocal使用Entry存储数据，ThreadLocal对象本身作为key，数据作为value
 >
 >   *   ThreadLocal应用场景
 >
