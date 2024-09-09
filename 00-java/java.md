@@ -260,7 +260,103 @@ public class PaymentController {
 
 ## 2. 建造者模式
 
+>   建造者模式是一种创建型设计模式，它的核心思想是将一个复杂对象的构建与表示分离，使得同样的构建过程可以创建不同的表示。
+>
+>   *   应用场景：
+>       1.   当创建复杂对象的算法应该独立于该对象的组成部分以及它们的装配方式时
+>       2.   当一个类构造器需要传入很多参数时，使用建造者模式可以避免构造函数的参数过多导致代码可读性差和易出问题
 
+*实际案例：*[附代码](./code/src/main/java/com/zhuzi/jian_zao_zhe)
+
+```java
+// Student类
+public class Student {
+    private String name;
+    private Integer age;
+    private Integer birthday; // 2002
+
+    public Student() {
+    }
+    public Student(String name, Integer age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public Integer getAge() {
+        return age;
+    }
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+    public Integer getBirthday() {
+        return birthday;
+    }
+    public void setBirthday(Integer birthday) {
+        this.birthday = birthday;
+    }
+
+    static class Builder {
+        private String name;
+        private Integer age;
+        private Integer birthdayYear;
+
+        public Builder() {
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder age(Integer age) throws Exception {
+            if (this.birthdayYear != null && !age.equals(LocalDate.now().getYear() - this.birthdayYear)) {
+                throw new Exception("年龄与出生年份不匹配");
+            }
+            this.age = age;
+            return this;
+        }
+
+        public Builder birthdayYear(Integer birthdayYear) throws Exception {
+            if (this.age != null && !birthdayYear.equals(LocalDate.now().getYear() - this.age)) {
+                throw new Exception("年龄与出生年份不匹配");
+            }
+            this.birthdayYear = birthdayYear;
+            return this;
+        }
+
+        public Student build() {
+            return new Student(name, age);
+        }
+    }
+
+}
+```
+
+```java
+// 应用场景1
+public static void test1() {
+    // 使用构造方法创建对象
+    Student student1 = new Student("张三", 18);
+
+    // 使用建造者模式创建对象
+    Student student2 = new Student.Builder().name("李四").age(20).build();
+}
+```
+
+```java
+// 应用场景2
+public static void test2() throws Exception {
+    // 判断年龄与生日年份
+    Student s1 = new Student.Builder().age(22).birthdayYear(2002).build();
+    Student s2 = new Student.Builder().age(20).birthdayYear(2001).build();
+}
+```
 
 
 
@@ -271,4 +367,6 @@ public class PaymentController {
 
 
 ## 4. 责任链模式
+
+
 
