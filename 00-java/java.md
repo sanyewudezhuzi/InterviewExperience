@@ -83,3 +83,192 @@
 >   *   \<T\>：声明一个泛型类或者泛型方法，代表的是某一种具体的数据类型
 >   *   \<?\>：使用泛型类或者泛型方法，代表的是泛指所有的对象类型
 
+
+
+
+
+
+
+# 二、设计模式
+
+## 1. 策略模式
+
+>   策略模式是一种行为设计模式，它定义了一系列算法，并将每一种算法封装起来，使它们可以相互替换。策略模式让算法的变化独立于使用算法的客户。这种模式涉及到三个主要的角色：
+>
+>   1.   **策略接口**：定义一个公共接口，所有的算法或行为以这个接口为准。环境角色通过这个接口来调用具体的算法实现。
+>   2.   **具体策略类**：实现了策略接口，封装了具体的算法或行为
+>   3.   **环境类**：接受客户的请求，随后把请求委托给某一个策略类。环境类会维护对策略对象的引用，并可在运行时动态地改变具体的策略。这个类持有对策略对象的引用，并定义一个接口让策略对象可以访问它的数据。
+>
+>   **优点**：
+>
+>   *   算法自由转换：可以在运行时切换对象内部的算法，改变对象的行为
+>   *   简化单元测试：每个算法都有自己的类，可以通过自己的接口单独测试
+>   *   符合开闭原则：对扩展开放，对修改关闭，增加新的算法时不需要修改环境类代码
+>
+>   **缺点**：
+>
+>   *   客户端必须知道所有的策略类，并自行决定使用哪一个策略类
+>   *   策略模式会造成有很多的策略类，增加了对象的数目
+
+*实际案例*：目前有很多的业务都具有支付功能，在支付功能中可能会有多种支付的方式，遇到这一类情况的业务时我们就可以采取策略模式。[附代码](./code/src/main/java/com/zhuzi/ce_lue)
+
+*   普通写法
+
+```java
+@RestController
+@RequestMapping("/celue")
+public class PaymentController {
+
+    @Autowired
+    private PayService payService;
+
+    /**
+     * 普通流程支付
+     *
+     * @param payType 支付方式
+     * @return
+     */
+    @GetMapping("/pay1")
+    public Boolean pay1(@RequestParam String payType) {
+        return payService.pay(payType);
+    }
+
+}
+```
+
+```java
+// service.impl类
+@Service
+public class PayServiceImpl implements PayService {
+
+    // 支付方法
+    @Override
+    public Boolean pay(String payType) {
+        if ("1".equals(payType)) {
+            // 微信支付
+            return weiXinPay();
+        } else if ("2".equals(payType)) {
+            // 支付宝支付
+            return aliPay();
+        }
+        return false;
+    }
+
+    // 微信支付
+    private Boolean weiXinPay() {
+        return false;
+    }
+
+    // 支付宝支付
+    private Boolean aliPay() {
+        return false;
+    }
+
+}
+```
+
+如果我们这时需要增加一个新的支付方式（例如“银联支付”），那么只能在service中修改业务代码，增加一层`else if`，并在下方新增一个银联支付的代码。
+
+*   策略模式
+
+```java
+// 策略接口
+public interface PayServiceStrategy {
+
+    // 支付策略
+    Boolean pay();
+
+}
+```
+
+```java
+// 具体策略类
+public class UnionPayServiceImpl implements PayServiceStrategy {
+    @Override
+    public Boolean pay() {
+        System.out.println("银联支付");
+        return false;
+    }
+}
+```
+
+```java
+// 定义枚举类
+@Getter
+public enum PayStrategyEnum {
+    // 微信支付
+    WEI_XIN_PAY("1", SpringUtils.getBeanByClass(WeixinPayServiceImpl.class)),
+    // 支付宝支付
+    ALI_PAY("2", SpringUtils.getBeanByClass(AliPayServiceImpl.class)),
+    // 银联支付
+    UNION_PAY("3", SpringUtils.getBeanByClass(UnionPayServiceImpl.class));
+
+    private String payType;
+    private PayServiceStrategy payServiceStrategy;
+
+    PayStrategyEnum(String payType, PayServiceStrategy payServiceStrategy) {
+        this.payType = payType;
+        this.payServiceStrategy = payServiceStrategy;
+    }
+
+    public static PayServiceStrategy getByPayType(String payType) {
+        if (StringUtils.isBlank(payType)) {
+            return null;
+        }
+        for (PayStrategyEnum payStrategyEnum : PayStrategyEnum.values()) {
+            if (payStrategyEnum.payType.equals(payType)) {
+                return payStrategyEnum.getPayServiceStrategy();
+            }
+        }
+        return null;
+    }
+}
+```
+
+```java
+// controller层
+@RestController
+@RequestMapping("/celue")
+public class PaymentController {
+
+    @Autowired
+    private PayService payService;
+
+    /**
+     * 策略模式支付
+     *
+     * @param payType 支付方式
+     * @return
+     */
+    @GetMapping("/pay2")
+    public Boolean pay2(@RequestParam String payType) {
+        // 1. 根据payType选择一个Bean对象执行
+        PayServiceStrategy payServiceStrategy = PayStrategyEnum.getByPayType(payType);
+        if (Objects.isNull(payServiceStrategy)) {
+            return false;
+        }
+        // 2. 调用不同的策略支付
+        return payServiceStrategy.pay();
+    }
+
+}
+```
+
+此时如果需要添加新的支付方式，只需新增新的策略类实现策略接口，并在枚举类中“注册”即可。
+
+
+
+## 2. 建造者模式
+
+
+
+
+
+## 3. 观察者模式
+
+
+
+
+
+## 4. 责任链模式
+
