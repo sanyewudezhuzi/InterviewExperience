@@ -4,12 +4,9 @@ import com.zhuzi.ce_lue.service.PayServiceStrategy;
 import com.zhuzi.ce_lue.service.impl.AliPayServiceImpl;
 import com.zhuzi.ce_lue.service.impl.UnionPayServiceImpl;
 import com.zhuzi.ce_lue.service.impl.WeixinPayServiceImpl;
-import com.zhuzi.ce_lue.utils.SpringUtils;
+import com.zhuzi.utils.SpringUtils;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.BeanUtils;
-
-import javax.annotation.Resource;
 
 /**
  * @Description PayStrategyEnum
