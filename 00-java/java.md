@@ -362,11 +362,191 @@ public static void test2() throws Exception {
 
 ## 3. 观察者模式
 
+>   观察者设计模式是一种行为设计模式，它定义了一种一对多的依赖关系，使得当一个对象（主题或目标）的状态发生改变时，所有依赖于它的对象（观察者）都能够得到通知并自动更新。
 
+*实际案例：*现在有一个需求，在用户注册成功后需要进行一系列的其他操作，例如“赠送100元代金券”、“发送邮箱通知”等，可能过了一段时间，操作又新增了一个“赠送一个月VIP”。[附代码](./code/src/main/java/com/zhuzi/guan_cha_zhe)
+
+*   普通写法
+
+```java
+// 注册功能
+public Boolean register(String username, String password, String email) {
+    // 1. 校验用户名是否重复
+    if (checkUserNameExist(username)) {
+        throw new RuntimeException("用户名已存在");
+    }
+
+    // 2. 新增一条用户数据
+    String userId = userDao.addUser(username, password);
+
+    // 3. 注册成功
+    if (userId != null && userId.length() > 0) {
+        // 3.1 送100元代金券
+        voucherDao.addVoucher(userId, "100");
+
+        // 3.2 发送邮件
+        String emailMessage = "恭喜你注册成功, 已发放100元代金券, 请前往个人中心领取";
+        sendEmailService.sendEmail(email, emailMessage);
+        
+        // 3.3 其它操作
+    }
+
+    return true;
+}
+```
+
+*   观察者模式
+
+```java
+// 观察者接口
+public interface UserRegistObserver {
+
+    // 用户注册成功后逻辑
+    void handleRegisterSuccess(String userId);
+
+}
+```
+
+```java
+// 实现接口
+public class RegisterEmailObserver implements UserRegistObserver {
+    @Override
+    public void handleRegisterSuccess(String userId) {
+        String emailMessage = "恭喜你注册成功, 已发放100元代金券, 请前往个人中心领取";
+        return;
+    }
+}
+```
+
+```java
+// 注册接口
+private static final List<UserRegistObserver> USER_REGIST_OBSERVERS = new ArrayList<>();
+
+static {
+    // 注册观察者
+    USER_REGIST_OBSERVERS.add(new RegisterVoucherObserver());
+    USER_REGIST_OBSERVERS.add(new RegisterEmailObserver());
+}
+
+// 注册功能
+public Boolean register(String username, String password, String email) {
+    // 1. 校验用户名是否重复
+    if (checkUserNameExist(username)) {
+        throw new RuntimeException("用户名已存在");
+    }
+
+    // 2. 新增一条用户数据
+    String userId = userDao.addUser(username, password);
+
+    // 3. 注册成功
+    for (UserRegistObserver observer : USER_REGIST_OBSERVERS) {
+        observer.handleRegisterSuccess(userId);
+    }
+
+    return true;
+}
+```
 
 
 
 ## 4. 责任链模式
+
+>   责任链模式是一种行为设计模式，用于处理请求的发送者和接收者之间的解耦问题。在这种模式中，一系列的处理对象（或称为处理器）被连接成一条链，请求沿着这条链传递，直到链中的某个对象能够处理该请求为止。
+>
+>   责任链模式主要包含以下几种角色：
+>
+>   *   抽象处理者：定义一个处理请求的接口，并包含一个指向下一个处理者的引用（即链中的下一个节点）
+>   *   具体处理者：实现抽象处理者的接口，具体处理请求，并可能将请求传递给链中的下一个处理者
+>   *   客户端：创建处理链，并向链的第一个处理者发送请求
+
+*实际案例：*文章发帖或评论发布的时候通常会对文本进行一系列的审核操作，这时我们可以采用责任链模式来优化代码。[附代码](./code/src/main/java/com/zhuzi/ze_ren_lian)
+
+*   普通写法
+
+```java
+// 新增文章
+public Boolean addArticle(String articleContent) {
+    // 检查文章是否包含黄色词语
+    if (!filterYellowKeyword(articleContent)) {
+        return false;
+    }
+
+    // 检查文章是否包含政治敏感词
+    if (!filterPoliticsKeyword(articleContent)) {
+        return false;
+    }
+
+    // 检查文章是否包含宗教敏感词
+    if (!filterReligionKeyword(articleContent)) {
+        return false;
+    }
+
+    // 其它操作...
+    return true;
+}
+```
+
+*   责任链模式
+
+```java
+// 定义过滤接口
+public interface SensitiveWordFilter {
+
+    Boolean wordFilter(String content);
+
+}
+```
+
+```java
+// 定义过滤接口实现类
+public class YellowSensitiveWordFilter implements SensitiveWordFilter {
+    @Override
+    public Boolean wordFilter(String content) {
+        return true;
+    }
+}
+```
+
+```java
+// 定义执行链
+@Component
+public class SensitiveWordFilterChain {
+    private static final List<SensitiveWordFilter> SENSITIVE_WORD_FILTERS = new ArrayList<>();
+
+    @PostConstruct
+    public void init() {
+        // 检查黄色词语
+        SENSITIVE_WORD_FILTERS.add(SpringUtils.getBeanByClass(YellowSensitiveWordFilter.class));
+        // 检查政治敏感词
+        SENSITIVE_WORD_FILTERS.add(SpringUtils.getBeanByClass(PoliticsSensitiveWordFilter.class));
+        // 检查宗教敏感词
+        SENSITIVE_WORD_FILTERS.add(SpringUtils.getBeanByClass(ReligionSensitiveWordFilter.class));
+    }
+
+    // 过滤敏感词
+    public static boolean filterSensitiveWord(String content) {
+        for (SensitiveWordFilter wordFilter : SENSITIVE_WORD_FILTERS) {
+            if (!wordFilter.wordFilter(content)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+```
+
+```java
+// 新增文章
+public Boolean addArticle(String articleContent) {
+    boolean sensitiveWordResult = SensitiveWordFilterChain.filterSensitiveWord(articleContent);
+    if (!sensitiveWordResult) {
+        return false;
+    }
+
+    // 其它操作...
+    return true;
+}
+```
 
 
 

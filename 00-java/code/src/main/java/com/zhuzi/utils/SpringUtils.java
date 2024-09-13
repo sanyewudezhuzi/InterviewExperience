@@ -1,4 +1,4 @@
-package com.zhuzi.ce_lue.utils;
+package com.zhuzi.utils;
 
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -23,5 +23,5 @@ public class SpringUtils implements ApplicationContextAware {
     public static <T> T getBeanByClass(Class<T> clazz) {
         return applicationContext.getBean(clazz);
     }
-    
+
 }
